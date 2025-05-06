@@ -71,7 +71,9 @@ const int         ZObjectAlignmentLarge         = 1 << ZObjectAlignmentLargeShif
 
 // Pointer part of address
 const uintptr_t   ZAddressOffsetShift           = 0;
+// 42
 const uintptr_t   ZAddressOffsetBits            = ZPlatformAddressOffsetBits;
+// (42 - 1) << 0
 const uintptr_t   ZAddressOffsetMask            = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
 const size_t      ZAddressOffsetMax             = (uintptr_t)1 << ZAddressOffsetBits;
 
@@ -81,8 +83,11 @@ const uintptr_t   ZAddressMetadataBits          = 4;
 const uintptr_t   ZAddressMetadataMask          = (((uintptr_t)1 << ZAddressMetadataBits) - 1) << ZAddressMetadataShift;
 
 // Metadata types
+// 1 << 42
 const uintptr_t   ZAddressMetadataMarked0       = (uintptr_t)1 << (ZAddressMetadataShift + 0);
+// 1 << 43
 const uintptr_t   ZAddressMetadataMarked1       = (uintptr_t)1 << (ZAddressMetadataShift + 1);
+// 1 << 44
 const uintptr_t   ZAddressMetadataRemapped      = (uintptr_t)1 << (ZAddressMetadataShift + 2);
 const uintptr_t   ZAddressMetadataFinalizable   = (uintptr_t)1 << (ZAddressMetadataShift + 3);
 

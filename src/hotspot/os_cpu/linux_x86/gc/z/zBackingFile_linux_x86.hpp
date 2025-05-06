@@ -29,13 +29,14 @@
 class ZBackingFile {
 private:
   static bool _hugetlbfs_mmap_retry;
-
+  // 保存对应文件映射的描述符
   int      _fd;
   uint64_t _filesystem;
   size_t   _available;
   bool     _initialized;
-
+  // 创建内存文件描述符
   int create_mem_fd(const char* name) const;
+  // 创建基于文件系统的文件描述符
   int create_file_fd(const char* name) const;
   int create_fd(const char* name) const;
 
@@ -56,7 +57,7 @@ public:
 
   int fd() const;
   size_t available() const;
-
+  // 用扩大共享内存对象大小
   size_t try_expand(size_t offset, size_t length, size_t alignment) const;
 };
 

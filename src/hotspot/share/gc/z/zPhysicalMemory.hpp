@@ -68,7 +68,7 @@ class ZPhysicalMemoryManager {
   friend class VMStructs;
 
 private:
-  ZPhysicalMemoryBacking _backing;
+    ZPhysicalMemoryBacking _backing;
   const size_t           _max_capacity;
   size_t                 _current_max_capacity;
   size_t                 _capacity;

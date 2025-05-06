@@ -189,7 +189,9 @@ void ZPhysicalMemoryBacking::pretouch_view(uintptr_t addr, size_t size) const {
   const size_t page_size = ZLargePages::is_explicit() ? os::large_page_size() : os::vm_page_size();
   os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
 }
-
+// pmem ZGC关于物理内存的一个结构体(物理内存大小)
+// addr 虚拟地址 这里会把[0~4TB)虚拟地址转化为Marked0, Marked1, Remapped视图对应的虚拟地址
+// 就是把最低42位的地址分别与第42~44位进行 '位或' 运算, 即得到不同视图里面的虚拟地址
 void ZPhysicalMemoryBacking::map_view(ZPhysicalMemory pmem, uintptr_t addr, bool pretouch) const {
   const size_t nsegments = pmem.nsegments();
 
@@ -239,9 +241,13 @@ uintptr_t ZPhysicalMemoryBacking::nmt_address(uintptr_t offset) const {
 void ZPhysicalMemoryBacking::map(ZPhysicalMemory pmem, uintptr_t offset) const {
   if (ZUnmapBadViews) {
     // Only map the good view, for debugging only
+    // ZUnmapBadViews==true, 在调试参数
+    // 只把地址映射到正在使用的地址视图中
+    // 此时如果访问其他地址视图, 将导致内存访问故障
     map_view(pmem, ZAddress::good(offset), AlwaysPreTouch);
   } else {
     // Map all views
+    // 把地址映射到3个视图中, 根据垃圾回收进行的阶段自动选择地址视图
     map_view(pmem, ZAddress::marked0(offset), AlwaysPreTouch);
     map_view(pmem, ZAddress::marked1(offset), AlwaysPreTouch);
     map_view(pmem, ZAddress::remapped(offset), AlwaysPreTouch);

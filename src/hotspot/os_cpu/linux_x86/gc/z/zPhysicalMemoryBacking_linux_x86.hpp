@@ -32,6 +32,7 @@ class ZPhysicalMemory;
 
 class ZPhysicalMemoryBacking {
 private:
+  // 分配内存管理器
   ZMemoryManager _manager;
   ZBackingFile   _file;
   const size_t   _granule_size;
@@ -56,7 +57,7 @@ public:
   void free(ZPhysicalMemory pmem);
 
   uintptr_t nmt_address(uintptr_t offset) const;
-
+  // 用于完成多视图映射
   void map(ZPhysicalMemory pmem, uintptr_t offset) const;
   void unmap(ZPhysicalMemory pmem, uintptr_t offset) const;
   void flip(ZPhysicalMemory pmem, uintptr_t offset) const;
