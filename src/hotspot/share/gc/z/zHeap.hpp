@@ -51,15 +51,23 @@ class ZHeap {
 
 private:
   static ZHeap*       _heap;
-
+  // 并发, 并行工作线程
   ZWorkers            _workers;
+  // 对象分配器
   ZObjectAllocator    _object_allocator;
+  // 页面分配器
   ZPageAllocator      _page_allocator;
+  // 页表
   ZPageTable          _pagetable;
+  // 标记管理器
   ZMark               _mark;
+  // 引用处理器
   ZReferenceProcessor _reference_processor;
+  // 弱根处理器(也称为非强根处理器)
   ZWeakRootsProcessor _weak_roots_processor;
+  // 转移管理器
   ZRelocate           _relocate;
+  // 转移集合
   ZRelocationSet      _relocation_set;
   ZServiceability     _serviceability;
 

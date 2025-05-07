@@ -58,9 +58,11 @@ ZVirtualMemory ZVirtualMemoryManager::alloc(size_t size, bool alloc_from_front) 
 
   if (alloc_from_front || size <= ZPageSizeSmall) {
     // Small page
+    // 小页面 从头开始分配
     start = _manager.alloc_from_front(size);
   } else {
     // Medium/Large page
+    // 中大页面从尾部开始分配
     start = _manager.alloc_from_back(size);
   }
 

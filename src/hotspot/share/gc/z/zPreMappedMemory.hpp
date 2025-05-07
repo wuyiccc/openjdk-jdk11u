@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 
 class ZPage;
-
+// ZGC预分配内存 zgc最小内存大小, 比如可以通过xms设置, 或者InitialHeapSize设置
 class ZPreMappedMemory {
 private:
   ZVirtualMemory  _vmem;

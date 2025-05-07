@@ -58,7 +58,9 @@ public:
   ZVirtualMemoryManager();
 
   bool is_initialized() const;
-
+  // 根据应用程序请求的大小来分配空间
+  // 在alloc中对于小页面zgc会从虚拟空间头部开始分配
+  // 对于中页面和大页面zgc从虚拟空间的尾部开始分配
   ZVirtualMemory alloc(size_t size, bool alloc_from_front = false);
   void free(ZVirtualMemory vmem);
 };

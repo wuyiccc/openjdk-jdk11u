@@ -32,6 +32,7 @@ ZPreMappedMemory::ZPreMappedMemory(ZVirtualMemoryManager &vmm, ZPhysicalMemoryMa
     _vmem(),
     _pmem(),
     _initialized(false) {
+  // 如果虚拟内存管理器  和 物理内存管理器都不能正确初始化, 直接返回
   if (!vmm.is_initialized() || !pmm.is_initialized()) {
     // Not initialized
     return;
@@ -43,14 +44,17 @@ ZPreMappedMemory::ZPreMappedMemory(ZVirtualMemoryManager &vmm, ZPhysicalMemoryMa
   log_info(gc, init)("Pre-mapping: " SIZE_FORMAT "M", size / M);
 
   if (size > 0) {
+  // 分配物理内存
     _pmem = pmm.alloc(size);
     if (_pmem.is_null()) {
       // Out of memory
       log_error(gc, init)("Failed to pre-map Java heap (Cannot allocate physical memory)");
+      // 如果不能分配物理内存, 直接返回
       return;
     }
-
+   // 分配虚拟内存, 预分配的空间都是小页面
     _vmem = vmm.alloc(size, true /* alloc_from_front */);
+    // 不能分配虚拟地址,释放资源并返回
     if (_vmem.is_null()) {
       // Out of address space
       log_error(gc, init)("Failed to pre-map Java heap (Cannot allocate virtual memory)");
@@ -59,6 +63,7 @@ ZPreMappedMemory::ZPreMappedMemory(ZVirtualMemoryManager &vmm, ZPhysicalMemoryMa
     }
 
     // Map physical memory
+    // 把zgc的物理内存真正映射到操作系统的物理内存
     pmm.map(_pmem, _vmem.start());
   }
 
