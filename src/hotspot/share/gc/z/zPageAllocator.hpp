@@ -39,18 +39,25 @@ class ZPageAllocator {
   friend class VMStructs;
 
 private:
+  // 锁变量, 在进行页面分配, 释放等处理时需要加锁, 保证只有一个线程能够操作
   ZLock                    _lock;
+  // 虚拟机内存管理器, 在进行页面分配, 释放时申请和释放虚拟内存
   ZVirtualMemoryManager    _virtual;
+  // 物理内存管理器, 在进行页面分配, 释放的时候申请和释放物理内存
   ZPhysicalMemoryManager   _physical;
+  // 页面缓存器, 在进行页面分配的时候优先从页面缓存中申请, 在页面释放的时候加入页面缓存
   ZPageCache               _cache;
   const size_t             _max_reserve;
+  // 预分配内存管理器, 在进行页面分配的时候, 不能从缓存中申请页面时候, 从预分配内存中分配
   ZPreMappedMemory         _pre_mapped;
   size_t                   _used_high;
   size_t                   _used_low;
   size_t                   _used;
   size_t                   _allocated;
   ssize_t                  _reclaimed;
+  // 同步阻塞页面分配的请求队列
   ZList<ZPageAllocRequest> _queue;
+  // 可回收的页面, 在进行页面分配的时候, 发现内存不足时把可以回收的缓存页面或者预分配内存页面加入可回收页面供后续页面回收
   ZList<ZPage>             _detached;
 
   static ZPage* const      gc_marker;
@@ -63,7 +70,9 @@ private:
   size_t try_ensure_unused_for_pre_mapped(size_t size);
 
   ZPage* create_page(uint8_t type, size_t size);
+  // 把新分配的内存映射到操作系统的物理内存上
   void map_page(ZPage* page);
+  // 在页面分配过程中发现内存不足, 把可以回收的页面进行回收
   void detach_page(ZPage* page);
   void flush_pre_mapped();
   void flush_cache(size_t size);
@@ -95,9 +104,10 @@ public:
   size_t reclaimed() const;
 
   void reset_statistics();
-
+  // 分配页面
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void flip_page(ZPage* page);
+  // 释放页面
   void free_page(ZPage* page, bool reclaimed);
   void destroy_page(ZPage* page);
 

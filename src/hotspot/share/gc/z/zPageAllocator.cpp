@@ -337,7 +337,7 @@ ZPage* ZPageAllocator::alloc_page_common(uint8_t type, size_t size, ZAllocationF
 
   return page;
 }
-
+// 阻塞分配中, 如果不能成功分配内存, 则启动垃圾回收, 并等待垃圾回收完成之后再次进行内存分配知道成功
 ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocationFlags flags) {
   // Prepare to block
   ZPageAllocRequest request(type, size, flags, ZCollectedHeap::heap()->total_collections());
@@ -382,15 +382,19 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
 
   return page;
 }
-
+// 非阻塞分配优先从页面缓存中分配, 不成功则从预分配内存中分配, 还不成功, 则将释放预分配的未使用的内存和部分页面缓存的内存用于创建新的页面
+// 如果还是内存不足, 无法分配内存的时候直接抛出oom异常
 ZPage* ZPageAllocator::alloc_page_nonblocking(uint8_t type, size_t size, ZAllocationFlags flags) {
   ZLocker locker(&_lock);
   return alloc_page_common(type, size, flags);
 }
 
 ZPage* ZPageAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
+  // 默认为true, 阻塞分配
   ZPage* const page = flags.non_blocking()
+                      // 非阻塞分配
                       ? alloc_page_nonblocking(type, size, flags)
+                      // 阻塞分配
                       : alloc_page_blocking(type, size, flags);
   if (page == NULL) {
     // Out of memory

@@ -198,6 +198,8 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
   ZAllocationFlags flags;
   flags.set_no_reserve();
 
+ // 通过ZStallOnOutOfMemory参数控制内存页面分配是否为阻塞分配
+ // 默认为true, 即为阻塞分配
   if (!ZStallOnOutOfMemory) {
     flags.set_non_blocking();
   }
