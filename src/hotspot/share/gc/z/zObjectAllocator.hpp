@@ -32,9 +32,16 @@
 class ZObjectAllocator {
 private:
   const uint         _nworkers;
+  // 记录一下每个cpu已经分配的字节数
   ZPerCPU<size_t>    _used;
+  // 页面指针/页面缓存
   ZContended<ZPage*> _shared_medium_page;
+  // 每个数组的元素为页面指针, 用于应用程序请求分配对象空间的时候使用,
+  // 这里要注意的是所有的应用程序都从这个缓存中分配对象, 但是为了加速对象的分配,
+  // 按照cpu进行缓存
   ZPerCPU<ZPage*>    _shared_small_page;
+  // 数组, 用于并行工作线程分配对象空间的时候使用,
+  // 实现每个工作线程对应一个页面缓存, 这也是为了最大限度的减少并发/并行时的竞争
   ZPerWorker<ZPage*> _worker_small_page;
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);

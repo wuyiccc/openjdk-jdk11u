@@ -82,6 +82,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 
     retry:
       // Install new page
+      // cas处理
       ZPage* const prev_page = Atomic::cmpxchg(new_page, shared_page, page);
       if (prev_page != page) {
         if (prev_page == NULL) {
@@ -91,6 +92,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
         }
 
         // Another page already installed, try allocation there first
+        // 如果cas失败, 说明有其他线程分配了页面空间, 则线程直接从这个页面空间中分配对象
         const uintptr_t prev_addr = prev_page->alloc_object_atomic(size);
         if (prev_addr == 0) {
           // Allocation failed, retry installing the new page
@@ -102,6 +104,7 @@ uintptr_t ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
         addr = prev_addr;
 
         // Undo new page allocation
+        // 释放本线程申请的对象(因为本线程申请的页面空间并没有使用)
         ZHeap::heap()->undo_alloc_page(new_page);
       }
     }
@@ -116,6 +119,7 @@ uintptr_t ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags fla
   uintptr_t addr = 0;
 
   // Allocate new large page
+  // 每个大对象都会独占一个页面
   const size_t page_size = align_up(size, ZPageSizeMin);
   ZPage* const page = alloc_page(ZPageTypeLarge, page_size, flags);
   if (page != NULL) {
@@ -126,10 +130,13 @@ uintptr_t ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags fla
   return addr;
 }
 
+// 分配中等对象
+// 所有的中等对象都会共享一个中等页面
+// 该函数会被并发访问: 工作线程/应用线程 工作线程/工作线程 应用线程/应用线程
 uintptr_t ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags flags) {
   return alloc_object_in_shared_page(_shared_medium_page.addr(), ZPageTypeMedium, ZPageSizeMedium, size, flags);
 }
-
+// 应用线程, 根据所在的cpu从共享的页面中分配对象空间
 uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags) {
   assert(ZThread::is_java() || ZThread::is_vm(), "Should be a Java or VM thread");
 
@@ -138,7 +145,9 @@ uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllo
 
   return alloc_object_in_shared_page(_shared_small_page.addr(), ZPageTypeSmall, ZPageSizeSmall, size, flags);
 }
-
+// 工作线程
+// 根据所在的工作线程, 从工作线程的缓存页面中分配
+// 工作线程分配对象只发生在对象的并发转移中
 uintptr_t ZObjectAllocator::alloc_small_object_from_worker(size_t size, ZAllocationFlags flags) {
   assert(ZThread::is_worker(), "Should be a worker thread");
 
@@ -170,14 +179,15 @@ uintptr_t ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags fla
 }
 
 uintptr_t ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
+
   if (size <= ZObjectSizeLimitSmall) {
-    // Small
+    // Small  < 256kb
     return alloc_small_object(size, flags);
   } else if (size <= ZObjectSizeLimitMedium) {
-    // Medium
+    // Medium <=4mb
     return alloc_medium_object(size, flags);
   } else {
-    // Large
+    // Large > 4m
     return alloc_large_object(size, flags);
   }
 }
