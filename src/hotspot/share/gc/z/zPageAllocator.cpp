@@ -46,7 +46,9 @@ private:
   const size_t                 _size;
   const ZAllocationFlags       _flags;
   const unsigned int           _total_collections;
+  // 请求列表
   ZListNode<ZPageAllocRequest> _node;
+  // 保存的是页面指针
   ZFuture<ZPage*>              _result;
 
 public:
@@ -71,11 +73,11 @@ public:
   unsigned int total_collections() const {
     return _total_collections;
   }
-
+  // 获取页面
   ZPage* wait() {
     return _result.get();
   }
-
+  // 设置当前请求成功分配到的页面
   void satisfy(ZPage* page) {
     _result.set(page);
   }
@@ -348,6 +350,7 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
   ZPage* page = alloc_page_common(type, size, flags);
   if (page == NULL) {
     // Allocation failed, enqueue request
+    // 如果分配失败, 则产线一个新的阻塞请求, 并把请求加入请求列表末尾处, 然后开始启动垃圾回收
     _queue.insert_last(&request);
   }
 

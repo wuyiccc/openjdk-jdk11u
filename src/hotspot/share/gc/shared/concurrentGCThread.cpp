@@ -74,11 +74,12 @@ void ConcurrentGCThread::terminate() {
 }
 
 void ConcurrentGCThread::run() {
+// 初始化线程
   initialize_in_thread();
   wait_for_universe_init();
-
+  // 子类重载
   run_service();
-
+  // 线程终止
   terminate();
 }
 

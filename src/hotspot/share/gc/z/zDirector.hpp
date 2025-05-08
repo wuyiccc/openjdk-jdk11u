@@ -27,7 +27,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/z/zMetronome.hpp"
-
+// 用于控制如何触发垃圾回收
 class ZDirector : public ConcurrentGCThread {
 private:
   static const double one_in_1000;

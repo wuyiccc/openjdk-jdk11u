@@ -37,16 +37,25 @@ class ZPage : public CHeapObj<mtGC> {
 
 private:
   // Always hot
+  // 页面类型
   const uint8_t        _type;             // Page type
+  // 页面状态, 在垃圾回收的时候会涉及对象转移, 会把对象所在页面设置为pinned, 用于在垃圾回收过程中对象的重定位, 如果页面为pinned
+  // 则转移后的对象还在该页面中
   volatile uint8_t     _pinned;           // Pinned flag
+  // 页面管理的numa节点id
   uint8_t              _numa_id;          // NUMA node affinity
+  // 分配序列号,
   uint32_t             _seqnum;           // Allocation sequence number
   const ZVirtualMemory _virtual;          // Virtual start/end address
   volatile uintptr_t   _top;              // Virtual top address
+  // 对象活跃信息表
   ZLiveMap             _livemap;          // Live map
 
+
   // Hot when relocated and cached
+  // 记录对页面中活跃对象的个数,大小等
   volatile uint32_t    _refcount;         // Page reference count
+  // 对象转地址信息表, 存储垃圾回收过程中对象转移之后的地址
   ZForwardingTable     _forwarding;       // Forwarding table
   ZPhysicalMemory      _physical;         // Physical memory for page
   ZListNode<ZPage>     _node;             // Page list node
@@ -87,15 +96,19 @@ public:
   uintptr_t block_start(uintptr_t addr) const;
   size_t block_size(uintptr_t addr) const;
   bool block_is_obj(uintptr_t addr) const;
-
+  // 页面活跃, 该状态下页面不能被回收
   bool is_active() const;
+  // 页面分配
   bool is_allocating() const;
+  // 页面可转移
   bool is_relocatable() const;
+  // 页面可回收
   bool is_detached() const;
 
+  // 页面已映射
   bool is_mapped() const;
   void set_pre_mapped();
-
+  // 页面被钉住
   bool is_pinned() const;
   void set_pinned();
 
@@ -107,6 +120,7 @@ public:
   bool is_marked() const;
   bool is_object_live(uintptr_t addr) const;
   bool is_object_strongly_live(uintptr_t addr) const;
+  // 标记活跃对象的状态
   bool mark_object(uintptr_t addr, bool finalizable, bool& inc_live);
 
   void inc_live_atomic(uint32_t objects, size_t bytes);
@@ -114,13 +128,15 @@ public:
 
   void object_iterate(ObjectClosure* cl);
 
+  // 从页面中分配对象空间
   uintptr_t alloc_object(size_t size);
   uintptr_t alloc_object_atomic(size_t size);
 
   bool undo_alloc_object(uintptr_t addr, size_t size);
   bool undo_alloc_object_atomic(uintptr_t addr, size_t size);
-
+  // 将对象从一个页面复制到另一个页面
   uintptr_t relocate_object(uintptr_t from);
+  // 对象重定位
   uintptr_t forward_object(uintptr_t from);
 
   void print_on(outputStream* out) const;

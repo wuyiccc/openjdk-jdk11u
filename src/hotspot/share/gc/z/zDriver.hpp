@@ -29,7 +29,7 @@
 #include "gc/z/zMessagePort.hpp"
 
 class ZOperationClosure;
-
+// 用于控制垃圾回收执行
 class ZDriver : public ConcurrentGCThread {
 private:
   ZMessagePort<GCCause::Cause> _gc_cycle_port;

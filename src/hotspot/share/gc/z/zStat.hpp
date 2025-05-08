@@ -316,7 +316,7 @@ public:
 
 //
 // Stat thread
-//
+// 控制统计数据收集和输出
 class ZStat : public ConcurrentGCThread {
 private:
   static const uint64_t sample_hz = 1;

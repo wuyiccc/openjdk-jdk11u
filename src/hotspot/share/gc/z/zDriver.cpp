@@ -253,7 +253,8 @@ bool ZDriver::vm_operation(ZOperationClosure* cl) {
     return op.success();
   }
 }
-
+// 在垃圾回收的最后会释放空闲的页面, 此时说明有可用的页面了, 会检查是否有阻塞请求, 如果有请求, 则分配页面, 并从请求列表中获取第一个请求
+// 然后把分配成功的页面放入请求的_result中
 void ZDriver::collect(GCCause::Cause cause) {
   switch (cause) {
   case GCCause::_wb_young_gc:

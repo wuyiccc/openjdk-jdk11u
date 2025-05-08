@@ -45,8 +45,11 @@
 // Stat sampler/counter data
 //
 struct ZStatSamplerData {
+  // 过去1s中待收集项执行的次数
   uint64_t _nsamples;
+  // 过去1s中待收集项数据
   uint64_t _sum;
+  // 过去1s中待收集项数据的最大值
   uint64_t _max;
 
   ZStatSamplerData() :
@@ -75,8 +78,11 @@ template <size_t size>
 class ZStatSamplerHistoryInterval {
 private:
   size_t           _next;
+  // 收集信息组
   ZStatSamplerData _samples[size];
+  // 累计信息, 是在当前周期内待收集项收集数据的和
   ZStatSamplerData _accumulated;
+  // 累计信息, 所有待收集项数据的和
   ZStatSamplerData _total;
 
 public:
@@ -141,9 +147,15 @@ public:
 
 class ZStatSamplerHistory : public CHeapObj<mtGC> {
 private:
+  // 最近10s
   ZStatSamplerHistoryInterval<10> _10seconds;
+  // 每收集到10s的数据, 会存入这里
+  // 最近10min
   ZStatSamplerHistoryInterval<60> _10minutes;
+  // 每收集到10min的数据, 会存入这里
+  // 最近10h
   ZStatSamplerHistoryInterval<60> _10hours;
+  // jvm启动以来收集到的所有数据
   ZStatSamplerData                _total;
 
   uint64_t avg(uint64_t sum, uint64_t nsamples) const {
@@ -845,6 +857,7 @@ void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {
 }
 
 bool ZStat::should_print(LogTargetHandle log) const {
+// ZStatisticsInterval 的默认值为10, 表示每10次统计之后输出一次信息, 每次统计信息的时间为1s, 所以是每10s输出统计信息
   return log.is_enabled() && (_metronome.nticks() % ZStatisticsInterval == 0);
 }
 
