@@ -72,7 +72,11 @@ inline ZMessagePort<T>::ZMessagePort() :
     _has_message(false),
     _seqnum(0),
     _queue() {}
-
+// 发送同步垃圾回收消息, 然后等待该消息被ZDriver处理之后才能继续执行,
+// 如果ZDriver执行垃圾回收, 同步消息将被放入信息队列等待该消息被ZDriver处理
+// 垃圾回收结束之后, ZDriver会通知等待线程继续执行
+// ps: 当有同一类型的同步消息在一个垃圾回收周期内到达, 在ZDriver完成垃圾回收后,
+// 通知所有同一类型等待该类型消息的线程
 template <typename T>
 inline void ZMessagePort<T>::send_sync(T message) {
   Request request;
@@ -99,7 +103,8 @@ inline void ZMessagePort<T>::send_sync(T message) {
     MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
   }
 }
-
+// 发送异步垃圾回收消息, 当没有垃圾回收执行的时候, 向ZDriver发送信息, 通知ZDriver执行垃圾回收,
+// 如果垃圾回收正在执行, 则丢弃该消息
 template <typename T>
 inline void ZMessagePort<T>::send_async(T message) {
   MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);

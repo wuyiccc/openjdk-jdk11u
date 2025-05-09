@@ -35,11 +35,14 @@ template <typename T>
 class ZMessagePort {
 private:
   typedef ZMessageRequest<T> Request;
-
+ // 监视器对象, 用于控制多个线程并发操作消息处理器
   Monitor        _monitor;
   bool           _has_message;
+  // 消息, ZDriver中存在消息是触发垃圾回收的原因
   T              _message;
+  // 消息序列号
   uint64_t       _seqnum;
+  // 同步消息队列
   ZList<Request> _queue;
 
 public:
